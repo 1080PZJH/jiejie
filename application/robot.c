@@ -17,6 +17,7 @@
 #include "gimbal.h"
 #include "shoot.h"
 #include "robot_cmd.h"
+#include "transmit.h"
 #endif
 
 
@@ -28,11 +29,12 @@ void RobotInit()
     __disable_irq();
     
     BSPInit();
+    TransmitInit();
 
 #if defined(ONE_BOARD) || defined(GIMBAL_BOARD)
     RobotCMDInit();
-    // GimbalInit();
-    // ShootInit();
+    GimbalInit();
+    ShootInit();
 #endif
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)
@@ -49,8 +51,9 @@ void RobotTask()
 {
 #if defined(ONE_BOARD) || defined(GIMBAL_BOARD)
     RobotCMDTask();
-    // GimbalTask();
-    // ShootTask();
+    GimbalTask();
+    ShootTask();
+    TransmitTask();
 #endif
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)

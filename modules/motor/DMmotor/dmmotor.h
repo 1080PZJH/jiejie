@@ -36,6 +36,7 @@ typedef struct
     uint16_t Kp;
     uint16_t Kd;
 }DMMotor_Send_s;
+
 typedef struct 
 {
     DM_Motor_Measure_s measure;

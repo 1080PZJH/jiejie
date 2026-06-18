@@ -28,7 +28,7 @@ void GimbalInit()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp = 8, // 8
+                .Kp = 5, // 8
                 .Ki = 0,
                 .Kd = 0,
                 .DeadBand = 0.1,
@@ -38,15 +38,14 @@ void GimbalInit()
                 .MaxOut = 500,
             },
             .speed_PID = {
-                .Kp = 50,  // 50
-                .Ki = 200, // 200
+                .Kp = 20,  // 50
+                .Ki = 0, // 200
                 .Kd = 0,
                 .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
                 .MaxOut = 20000,
             },
             .other_angle_feedback_ptr = &gimba_IMU_data->YawTotalAngle,
-            // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
             .other_speed_feedback_ptr = &gimba_IMU_data->Gyro[2],
         },
         .controller_setting_init_config = {
@@ -54,7 +53,7 @@ void GimbalInit()
             .speed_feedback_source = OTHER_FEED,
             .outer_loop_type = ANGLE_LOOP,
             .close_loop_type = ANGLE_LOOP | SPEED_LOOP,
-            .motor_reverse_flag = MOTOR_DIRECTION_NORMAL,
+            .motor_reverse_flag = MOTOR_DIRECTION_REVERSE,
         },
         .motor_type = GM6020};
     // PITCH
@@ -81,8 +80,7 @@ void GimbalInit()
                 .MaxOut = 20000,
             },
             .other_angle_feedback_ptr = &gimba_IMU_data->Pitch,
-            // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
-            .other_speed_feedback_ptr = (&gimba_IMU_data->Gyro[0]),
+            .other_speed_feedback_ptr = &gimba_IMU_data->Gyro[0],
         },
         .controller_setting_init_config = {
             .angle_feedback_source = OTHER_FEED,
@@ -107,7 +105,8 @@ void GimbalTask()
     // 获取云台控制数据
     // 后续增加未收到数据的处理
     SubGetMessage(gimbal_sub, &gimbal_cmd_recv);
-
+    float pitch_error;
+    float pitch_torque;
     // @todo:现在已不再需要电机反馈,实际上可以始终使用IMU的姿态数据来作为云台的反馈,yaw电机的offset只是用来跟随底盘
     // 根据控制模式进行电机反馈切换和过渡,视觉模式在robot_cmd模块就已经设置好,gimbal只看yaw_ref和pitch_ref
     switch (gimbal_cmd_recv.gimbal_mode)
@@ -129,7 +128,10 @@ void GimbalTask()
         //DJIMotorChangeFeed(pitch_motor, SPEED_LOOP, OTHER_FEED);
         DJIMotorSetRef(yaw_motor, gimbal_cmd_recv.yaw); // yaw和pitch会在robot_cmd中处理好多圈和单圈
         //DJIMotorSetRef(pitch_motor, gimbal_cmd_recv.pitch);
-        DMMotorSetRef(pitch_motor, gimbal_cmd_recv.pitch);
+        pitch_error = gimbal_cmd_recv.pitch - gimba_IMU_data->Pitch;
+        pitch_torque = pitch_error * 0.05f;  // 临时增益，后续调参
+        pitch_torque = LIMIT_MIN_MAX(pitch_torque, -5.0f, 5.0f);
+        DMMotorSetRef(pitch_motor, pitch_torque);
         break;
     // 云台自由模式,使用编码器反馈,底盘和云台分离,仅云台旋转,一般用于调整云台姿态(英雄吊射等)/能量机关
     case GIMBAL_FREE_MODE: // 后续删除,或加入云台追地盘的跟随模式(响应速度更快)
@@ -141,7 +143,10 @@ void GimbalTask()
         //DJIMotorChangeFeed(pitch_motor, SPEED_LOOP, OTHER_FEED);
         DJIMotorSetRef(yaw_motor, gimbal_cmd_recv.yaw); // yaw和pitch会在robot_cmd中处理好多圈和单圈
         //DJIMotorSetRef(pitch_motor, gimbal_cmd_recv.pitch);
-        DMMotorSetRef(pitch_motor, gimbal_cmd_recv.pitch);
+        pitch_error = gimbal_cmd_recv.pitch - gimba_IMU_data->Pitch;
+        pitch_torque = pitch_error * 0.05f;  // 临时增益，后续调参
+        pitch_torque = LIMIT_MIN_MAX(pitch_torque, -5.0f, 5.0f);
+        DMMotorSetRef(pitch_motor, pitch_torque);
         break;
     default:
         break;

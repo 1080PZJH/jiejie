@@ -32,6 +32,40 @@
                 "samplesPerSecond": 4
             }
         },
+                // 使用dap-link进行调试的配置
+        {
+            "name": "DAPLink",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/basic_framework.elf",
+
+            "request": "launch",
+            "type": "cortex-debug",
+
+            "servertype": "openocd",
+
+            "device": "STM32F407IG",
+
+            "interface": "swd",
+
+            "runToEntryPoint": "main",
+
+            "svdFile": "${workspaceFolder}/STM32F407.svd",
+
+            "gdbPath": "D:/msys64/mingw64/bin/gdb-multiarch.exe",
+
+            "configFiles": [
+                "${workspaceFolder}/openocd_dap.cfg"
+            ],
+
+            "preLaunchTask": "build task",
+
+            "rtos": "FreeRTOS",
+
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            }
+        },
         // 使用j-link进行调试时的参考配置
         {
             "name": "Jlink",

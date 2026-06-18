@@ -32,7 +32,7 @@ static void DMMotorSetMode(DMMotor_Mode_e cmd, DMMotorInstance *motor)
     CANTransmit(motor->motor_can_instace, 1);
 }
 
-static void DMMotorDecode(CANInstance *motor_can)
+static void DMMotorDecode(CANInstance *motor_can)//解析电机反馈数据
 {
     uint16_t tmp; // 用于暂存解析值,稍后转换成float数据,避免多次创建临时变量
     uint8_t *rxbuff = motor_can->rx_buff;
@@ -58,7 +58,7 @@ static void DMMotorDecode(CANInstance *motor_can)
 static void DMMotorLostCallback(void *motor_ptr)
 {
 }
-void DMMotorCaliEncoder(DMMotorInstance *motor)
+void DMMotorCaliEncoder(DMMotorInstance *motor)//校准电机编码器
 {
     DMMotorSetMode(DM_CMD_ZERO_POSITION, motor);
     DWT_Delay(0.1);
@@ -110,7 +110,7 @@ void DMMotorStop(DMMotorInstance *motor)//不使用使能模式是因为需要�
     motor->stop_flag = MOTOR_STOP;
 }
 
-void DMMotorOuterLoop(DMMotorInstance *motor, Closeloop_Type_e type)
+void DMMotorOuterLoop(DMMotorInstance *motor, Closeloop_Type_e type)//设置电机外环控制模式
 {
     motor->motor_settings.outer_loop_type = type;
 }
@@ -121,7 +121,7 @@ void DMMotorTask(void const *argument)
 {
     float  pid_ref, set;
     DMMotorInstance *motor = (DMMotorInstance *)argument;
-   //DM_Motor_Measure_s *measure = &motor->measure;
+    //DM_Motor_Measure_s *measure = &motor->measure;
     Motor_Control_Setting_s *setting = &motor->motor_settings;
     //CANInstance *motor_can = motor->motor_can_instace;
     //uint16_t tmp;
@@ -158,7 +158,7 @@ void DMMotorTask(void const *argument)
         osDelay(2);
     }
 }
-void DMMotorControlInit()
+void DMMotorControlInit()//初始化电机控制任务
 {
     char dm_task_name[5] = "dm";
     // 遍历所有电机实例,创建任务
@@ -173,3 +173,5 @@ void DMMotorControlInit()
         dm_task_handle[i] = osThreadCreate(osThread(dm_task_name), dm_motor_instance[i]);
     }
 }
+
+

@@ -82,23 +82,27 @@ void ChassisInit()
     };
     //  @todo: 当前还没有设置电机的正反转,仍然需要手动添加reference的正负号,需要电机module的支持,待修改.
     //使用功率控制的电机需要使用PowerControlInit()函数初始化,因为电机的控制方式不同
-    chassis_motor_config.can_init_config.tx_id = 1;
-    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
-    motor_lf = PowerControlInit(&chassis_motor_config);
-
     chassis_motor_config.can_init_config.tx_id = 2;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
-    motor_rf = PowerControlInit(&chassis_motor_config);
+    //motor_lf = PowerControlInit(&chassis_motor_config);
+    motor_lf = DJIMotorInit(&chassis_motor_config);
+
+    chassis_motor_config.can_init_config.tx_id = 1;
+    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
+    //motor_rf = PowerControlInit(&chassis_motor_config);
+    motor_rf = DJIMotorInit(&chassis_motor_config);
 
     chassis_motor_config.can_init_config.tx_id = 4;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
-    motor_lb = PowerControlInit(&chassis_motor_config);
-
+    //motor_rb = PowerControlInit(&chassis_motor_config);
+    motor_rb = DJIMotorInit(&chassis_motor_config);
+    
     chassis_motor_config.can_init_config.tx_id = 3;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
-    motor_rb = PowerControlInit(&chassis_motor_config);
+    //motor_lb = PowerControlInit(&chassis_motor_config);
+    motor_lb = DJIMotorInit(&chassis_motor_config); 
 
-    referee_data = UITaskInit(&huart6, &ui_data); // 裁判系统初始化,会同时初始化UI
+    //referee_data = UITaskInit(&huart6, &ui_data); // 裁判系统初始化,会同时初始化UI
 
 /* Buffer环暂未测试，逻辑是计算期望buffer与实际buffer的差值，转换为冗余的功率，todo：输入给功率控制部分，待完善 */
     PID_Init_Config_s Buffer_pid_conf = {
@@ -149,11 +153,16 @@ void ChassisInit()
  *        用宏进行预替换减小开销,运动解算具体过程参考教程
  */
 static void MecanumCalculate()
-{
-    vt_lf = -chassis_vx - chassis_vy - chassis_cmd_recv.wz * LF_CENTER;
-    vt_rf = -chassis_vx + chassis_vy - chassis_cmd_recv.wz * RF_CENTER;
-    vt_lb = chassis_vx - chassis_vy - chassis_cmd_recv.wz * LB_CENTER;
-    vt_rb = chassis_vx + chassis_vy - chassis_cmd_recv.wz * RB_CENTER;
+{   //麦轮
+    // vt_lf = -chassis_vx - chassis_vy - chassis_cmd_recv.wz * LF_CENTER;
+    // vt_rf = -chassis_vx + chassis_vy - chassis_cmd_recv.wz * RF_CENTER;
+    // vt_lb = chassis_vx - chassis_vy - chassis_cmd_recv.wz * LB_CENTER;
+    // vt_rb = chassis_vx + chassis_vy - chassis_cmd_recv.wz * RB_CENTER;
+    //全向轮
+    vt_lf = -chassis_vy - chassis_vx - chassis_cmd_recv.wz * LF_CENTER;
+    vt_rf =  chassis_vy - chassis_vx - chassis_cmd_recv.wz * RF_CENTER;
+    vt_lb = -chassis_vy + chassis_vx - chassis_cmd_recv.wz * LB_CENTER;
+    vt_rb =  chassis_vy + chassis_vx - chassis_cmd_recv.wz * RB_CENTER;
 }
 
 /**

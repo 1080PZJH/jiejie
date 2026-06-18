@@ -30,6 +30,25 @@
             }
         },
         {
+            "label": "download daplink",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "openocd_dap.cfg",
+                "-c",
+                "program build/basic_framework.elf verify reset exit"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
             "label": "log",
             "type": "shell",
             "command": "JlinkRTTClient",

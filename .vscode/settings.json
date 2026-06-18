@@ -12,6 +12,20 @@
         "arm_math.h": "c",
         "can_comm.h": "c",
         "dji_motor.h": "c",
-        "bsp_log.h": "c"
-    }
+        "bsp_log.h": "c",
+        "*.h": "c"
+    },
+    "makefile.makePath": "mingw32-make",
+    "search.exclude": {
+        "**/Drivers": true,
+        "**/Middlewares": true,
+        "**/build": true,
+        "**/.Doc": true
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/build": true
+    },
+    "search.useIgnoreFiles": true,
+    "C_Cpp.intelliSenseEngine": "default"
 }

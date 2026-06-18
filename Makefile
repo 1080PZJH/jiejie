@@ -155,6 +155,7 @@ application/gimbal/gimbal.c \
 application/chassis/chassis.c \
 application/shoot/shoot.c \
 application/cmd/robot_cmd.c \
+application/transmit/transmit.c \
 application/robot.c
 
 # ASM sources
@@ -233,6 +234,7 @@ C_INCLUDES =  \
 -Iapplication/shoot \
 -Iapplication/gimbal \
 -Iapplication/cmd \
+-Iapplication/transmit \
 -Iapplication \
 -Ibsp/dwt \
 -Ibsp/can \
@@ -295,7 +297,7 @@ LIBS = -lc -lm -lnosys  \
 -l:libCMSISDSP.a
 LIBDIR =  \
 -LMiddlewares/ST/ARM/DSP/Lib
-LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -flto -Wl,--no-warn-rwx-segments -Wl,--print-memory-usage
+LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -flto -Wl,--no-warn-rwx-segments -Wl,--print-memory-usage -u _printf_float
 
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin

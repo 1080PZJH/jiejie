@@ -91,7 +91,7 @@ void RobotCMDInit()
     //     },
     // };
     //bmi088_test = BMI088Register(&bmi088_config);
-   rc_data = RemoteControlInit(&huart3);   // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
+    rc_data = RemoteControlInit(&huart3);   // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
     vision_recv_data = VisionInit(&huart1); // 视觉通信串口
 
     gimbal_cmd_pub = PubRegister("gimbal_cmd", sizeof(Gimbal_Ctrl_Cmd_s));
@@ -156,7 +156,7 @@ static void RemoteControlSet()
     // 控制底盘和云台运行模式,云台待添加,云台是否始终使用IMU数据?
     if (switch_is_down(rc_data[TEMP].rc.switch_right)) // 右侧开关状态[下],底盘跟随云台
     {
-        chassis_cmd_send.chassis_mode = CHASSIS_ROTATE;
+        chassis_cmd_send.chassis_mode = CHASSIS_FOLLOW_GIMBAL_YAW;
         gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
     }
     else if (switch_is_mid(rc_data[TEMP].rc.switch_right)) // 右侧开关状态[中],底盘和云台分离,底盘保持不转动
@@ -164,6 +164,11 @@ static void RemoteControlSet()
         chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;
         gimbal_cmd_send.gimbal_mode = GIMBAL_FREE_MODE;
     }
+    // else if (switch_is_up(rc_data[TEMP].rc.switch_right)) // 右侧开关状态[上],小陀螺控制
+    // {
+    //     chassis_cmd_send.chassis_mode = CHASSIS_ROTATE;
+    //     gimbal_cmd_send.gimbal_mode = GIMBAL_FREE_MODE;
+    // }
 
     // 云台参数,确定云台控制数据
     if (switch_is_mid(rc_data[TEMP].rc.switch_left)) // 左侧开关状态为[中],视觉模式
@@ -184,10 +189,10 @@ static void RemoteControlSet()
     chassis_cmd_send.vy = 10.0f * (float)rc_data[TEMP].rc.rocker_r1; // 1数值方向
 
     // 发射参数
-    if (switch_is_up(rc_data[TEMP].rc.switch_right)) // 右侧开关状态[上],弹舱打开
-        ;                                            // 弹舱舵机控制,待添加servo_motor模块,开启
-    else
-        ; // 弹舱舵机控制,待添加servo_motor模块,关闭
+    // if (switch_is_up(rc_data[TEMP].rc.switch_right)) // 右侧开关状态[上],弹舱打开
+    //     ;                                            // 弹舱舵机控制,待添加servo_motor模块,开启
+    // else
+    //     ; // 弹舱舵机控制,待添加servo_motor模块,关闭
 
     // 摩擦轮控制,拨轮向上打为负,向下为正
     if (rc_data[TEMP].rc.dial < -100) // 向上超过100,打开摩擦轮

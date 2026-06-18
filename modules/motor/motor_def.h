@@ -52,8 +52,8 @@ typedef enum
 /* 电机正反转标志 */
 typedef enum
 {
-    MOTOR_DIRECTION_NORMAL = 0,
-    MOTOR_DIRECTION_REVERSE = 1
+    MOTOR_DIRECTION_NORMAL = 0,    //正常方向（默认）
+    MOTOR_DIRECTION_REVERSE = 1    //反转方向
 } Motor_Reverse_Flag_e;
 
 /* 反馈量正反标志 */
