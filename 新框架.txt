@@ -22,6 +22,9 @@
       transmit
 
 7.Git代码管理
+     git add -A              # 添加所有修改和删除
+     git commit -m "更新说明内容"
+     git push                # 推送到远程仓库
 
 8.丢控保护任务
     Robot_cmd.c EmergencyHandler();

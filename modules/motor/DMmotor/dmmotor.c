@@ -158,6 +158,42 @@ void DMMotorTask(void const *argument)
         osDelay(2);
     }
 }
+void DMMotorControl()//在MotorControlTask中同步调用，500Hz
+{
+    DMMotor_Send_s motor_send_mailbox;
+    for (size_t i = 0; i < idx; i++)
+    {
+        DMMotorInstance *motor = dm_motor_instance[i];
+        Motor_Control_Setting_s *setting = &motor->motor_settings;
+        float pid_ref = motor->pid_ref;
+        float set = pid_ref;
+
+        if (setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
+            set *= -1;
+
+        LIMIT_MIN_MAX(set, DM_T_MIN, DM_T_MAX);
+        motor_send_mailbox.position_des = float_to_uint(0, DM_P_MIN, DM_P_MAX, 16);
+        motor_send_mailbox.velocity_des = float_to_uint(0, DM_V_MIN, DM_V_MAX, 12);
+        motor_send_mailbox.torque_des = float_to_uint(pid_ref, DM_T_MIN, DM_T_MAX, 12);
+        motor_send_mailbox.Kp = 0;
+        motor_send_mailbox.Kd = 0;
+
+        if(motor->stop_flag == MOTOR_STOP)
+            motor_send_mailbox.torque_des = float_to_uint(0, DM_T_MIN, DM_T_MAX, 12);
+
+        motor->motor_can_instace->tx_buff[0] = (uint8_t)(motor_send_mailbox.position_des >> 8);
+        motor->motor_can_instace->tx_buff[1] = (uint8_t)(motor_send_mailbox.position_des);
+        motor->motor_can_instace->tx_buff[2] = (uint8_t)(motor_send_mailbox.velocity_des >> 4);
+        motor->motor_can_instace->tx_buff[3] = (uint8_t)(((motor_send_mailbox.velocity_des & 0xF) << 4) | (motor_send_mailbox.Kp >> 8));
+        motor->motor_can_instace->tx_buff[4] = (uint8_t)(motor_send_mailbox.Kp);
+        motor->motor_can_instace->tx_buff[5] = (uint8_t)(motor_send_mailbox.Kd >> 4);
+        motor->motor_can_instace->tx_buff[6] = (uint8_t)(((motor_send_mailbox.Kd & 0xF) << 4) | (motor_send_mailbox.torque_des >> 8));
+        motor->motor_can_instace->tx_buff[7] = (uint8_t)(motor_send_mailbox.torque_des);
+
+        CANTransmit(motor->motor_can_instace, 1);
+    }
+}
+
 void DMMotorControlInit()//初始化电机控制任务
 {
     char dm_task_name[5] = "dm";

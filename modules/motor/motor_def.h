@@ -130,10 +130,10 @@ typedef struct
 /* 用于初始化CAN电机的结构体,各类电机通用 */
 typedef struct
 {
-    Motor_Controller_Init_s controller_param_init_config;
-    Motor_Control_Setting_s controller_setting_init_config;
-    Motor_Type_e motor_type;
-    CAN_Init_Config_s can_init_config;
+    Motor_Controller_Init_s controller_param_init_config; // 控制器参数初始化配置(三环PID配置及前馈指针)
+    Motor_Control_Setting_s controller_setting_init_config; // 控制设置初始化配置(闭环类型、反转标志、反馈来源等)
+    Motor_Type_e motor_type;                               // 电机类型(GM6020/M3508/M2006/LK9025/HT04/DM4310)
+    CAN_Init_Config_s can_init_config;                     // CAN初始化配置
 } Motor_Init_Config_s;
 
 #endif // !MOTOR_DEF_H

@@ -61,6 +61,7 @@ void GimbalInit()
         .can_init_config = {
             .can_handle = &hcan2,
             .tx_id = 1,
+            .rx_id = 1,
         },
         .controller_param_init_config = {
             .angle_PID = {
@@ -104,9 +105,10 @@ void GimbalTask()
 {
     // 获取云台控制数据
     // 后续增加未收到数据的处理
+    DMMotorEnable(pitch_motor);
     SubGetMessage(gimbal_sub, &gimbal_cmd_recv);
     float pitch_error;
-    float pitch_torque;
+    float pitch_torque=0;
     // @todo:现在已不再需要电机反馈,实际上可以始终使用IMU的姿态数据来作为云台的反馈,yaw电机的offset只是用来跟随底盘
     // 根据控制模式进行电机反馈切换和过渡,视觉模式在robot_cmd模块就已经设置好,gimbal只看yaw_ref和pitch_ref
     switch (gimbal_cmd_recv.gimbal_mode)
@@ -115,19 +117,14 @@ void GimbalTask()
     case GIMBAL_ZERO_FORCE:
         DJIMotorStop(yaw_motor);
         DMMotorStop(pitch_motor);
-        //DJIMotorStop(pitch_motor);
         break;
     // 使用陀螺仪的反馈,底盘根据yaw电机的offset跟随云台或视觉模式采用
     case GIMBAL_GYRO_MODE: // 后续只保留此模式
         DJIMotorEnable(yaw_motor);
         DMMotorEnable(pitch_motor);
-        //DJIMotorEnable(pitch_motor);
         DJIMotorChangeFeed(yaw_motor, ANGLE_LOOP, OTHER_FEED);
         DJIMotorChangeFeed(yaw_motor, SPEED_LOOP, OTHER_FEED);
-        //DJIMotorChangeFeed(pitch_motor, ANGLE_LOOP, OTHER_FEED);
-        //DJIMotorChangeFeed(pitch_motor, SPEED_LOOP, OTHER_FEED);
         DJIMotorSetRef(yaw_motor, gimbal_cmd_recv.yaw); // yaw和pitch会在robot_cmd中处理好多圈和单圈
-        //DJIMotorSetRef(pitch_motor, gimbal_cmd_recv.pitch);
         pitch_error = gimbal_cmd_recv.pitch - gimba_IMU_data->Pitch;
         pitch_torque = pitch_error * 0.05f;  // 临时增益，后续调参
         pitch_torque = LIMIT_MIN_MAX(pitch_torque, -5.0f, 5.0f);
@@ -136,13 +133,9 @@ void GimbalTask()
     // 云台自由模式,使用编码器反馈,底盘和云台分离,仅云台旋转,一般用于调整云台姿态(英雄吊射等)/能量机关
     case GIMBAL_FREE_MODE: // 后续删除,或加入云台追地盘的跟随模式(响应速度更快)
         DJIMotorEnable(yaw_motor);
-        //DJIMotorEnable(pitch_motor);
         DJIMotorChangeFeed(yaw_motor, ANGLE_LOOP, OTHER_FEED);
         DJIMotorChangeFeed(yaw_motor, SPEED_LOOP, OTHER_FEED);
-        //DJIMotorChangeFeed(pitch_motor, ANGLE_LOOP, OTHER_FEED);
-        //DJIMotorChangeFeed(pitch_motor, SPEED_LOOP, OTHER_FEED);
         DJIMotorSetRef(yaw_motor, gimbal_cmd_recv.yaw); // yaw和pitch会在robot_cmd中处理好多圈和单圈
-        //DJIMotorSetRef(pitch_motor, gimbal_cmd_recv.pitch);
         pitch_error = gimbal_cmd_recv.pitch - gimba_IMU_data->Pitch;
         pitch_torque = pitch_error * 0.05f;  // 临时增益，后续调参
         pitch_torque = LIMIT_MIN_MAX(pitch_torque, -5.0f, 5.0f);
