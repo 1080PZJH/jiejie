@@ -66,7 +66,7 @@ static void f_Derivative_On_Measurement(PIDInstance *pid)
     pid->Dout = pid->Kd * (pid->Last_Measure - pid->Measure) / pid->dt;
 }
 
-// 微分滤波(采集微分时,滤除高频噪声)
+// 微分滤波(采集微分时,滤除高频噪声)LPF低通滤波
 static void f_Derivative_Filter(PIDInstance *pid)
 {
     pid->Dout = pid->Dout * pid->dt / (pid->Derivative_LPF_RC + pid->dt) +

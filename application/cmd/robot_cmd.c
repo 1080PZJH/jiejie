@@ -17,6 +17,13 @@
 #define YAW_ALIGN_ANGLE (YAW_CHASSIS_ALIGN_ECD * ECD_ANGLE_COEF_DJI) // 对齐时的角度,0-360
 #define PTICH_HORIZON_ANGLE (PITCH_HORIZON_ECD * ECD_ANGLE_COEF_DJI) // pitch水平时电机的角度,0-360
 
+// pitch软件限位(IMU姿态角,rad),按云台实际机械限位调整,防止角度环打限位
+#define PITCH_ANGLE_MAX (0.80f)
+#define PITCH_ANGLE_MIN (-0.5f)
+
+// 遥控器摇杆死区,摇杆输出范围±660,低于该值视为回中(0),避免松手后残留小速度导致云台缓慢漂移
+#define ROCK_DEADBAND (20.0f)
+
 /* cmd应用包含的模块实例指针和交互信息存储*/
 #ifdef GIMBAL_BOARD // 对双板的兼容,条件编译
 #include "can_comm.h"
@@ -179,10 +186,16 @@ static void RemoteControlSet()
     // 左侧开关状态为[下],或视觉未识别到目标,纯遥控器拨杆控制
     if (switch_is_down(rc_data[TEMP].rc.switch_left) || vision_recv_data->target_state == NO_TARGET)
     { // 按照摇杆的输出大小进行角度增量,增益系数需调整
-        gimbal_cmd_send.yaw += 0.005f * (float)rc_data[TEMP].rc.rocker_l_;
-        gimbal_cmd_send.pitch += 0.001f * (float)rc_data[TEMP].rc.rocker_l1;
+        // 临时:yaw单速度环调试,摇杆直接映射±2rad/s速度参考(松手=0停转);
+        // 速度环调好后切串级时必须恢复角度增量模式: gimbal_cmd_send.yaw += 0.005f * rocker_l_
+        if ((float)rc_data[TEMP].rc.rocker_l_ > ROCK_DEADBAND || (float)rc_data[TEMP].rc.rocker_l_ < -ROCK_DEADBAND)
+            gimbal_cmd_send.yaw = 2.0f * (float)rc_data[TEMP].rc.rocker_l_ / 660.0f;
+        else
+            gimbal_cmd_send.yaw = 0;
+        gimbal_cmd_send.pitch += 0.001f * (float)rc_data[TEMP].rc.rocker_l1; // 角度增量,作为串级角度环参考
     }
     // 云台软件限位
+    //LIMIT_MIN_MAX(gimbal_cmd_send.pitch, PITCH_ANGLE_MIN, PITCH_ANGLE_MAX);
 
     // 底盘参数,目前没有加入小陀螺(调试似乎暂时没有必要),系数需要调整
     chassis_cmd_send.vx = 10.0f * (float)rc_data[TEMP].rc.rocker_r_; // _水平方向
@@ -219,6 +232,7 @@ static void MouseKeySet()
 
     gimbal_cmd_send.yaw += (float)rc_data[TEMP].mouse.x / 660 * 10; // 系数待测
     gimbal_cmd_send.pitch += (float)rc_data[TEMP].mouse.y / 660 * 10;
+    // LIMIT_MIN_MAX(gimbal_cmd_send.pitch, PITCH_ANGLE_MIN, PITCH_ANGLE_MAX); // 软件限位已禁用
 
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_Z] % 3) // Z键设置弹速
     {

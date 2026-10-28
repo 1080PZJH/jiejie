@@ -29,7 +29,6 @@ void RobotInit()
     __disable_irq();
     
     BSPInit();
-    TransmitInit();
 
 #if defined(ONE_BOARD) || defined(GIMBAL_BOARD)
     RobotCMDInit();
@@ -38,6 +37,7 @@ void RobotInit()
 #endif
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)
+    MA600TaskInit(); // 磁编注册,必须先于底盘初始化(舵向角度依赖磁编绝对角度)
     ChassisInit();
 #endif
 
@@ -53,7 +53,6 @@ void RobotTask()
     RobotCMDTask();
     GimbalTask();
     ShootTask();
-    TransmitTask();
 #endif
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)

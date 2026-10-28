@@ -23,9 +23,9 @@
         "**/.Doc": true
     },
     "files.exclude": {
-        "**/.git": true,
-        "**/build": true
+        "**/.git": true
     },
     "search.useIgnoreFiles": true,
-    "C_Cpp.intelliSenseEngine": "default"
+    "C_Cpp.intelliSenseEngine": "default",
+    "emberprobe.sampleFrequencyHz": 30
 }

@@ -4,7 +4,8 @@
 
 /* 根据开发板引出的spi引脚以及CubeMX中的初始化配置设定 */
 #define SPI_DEVICE_CNT 2       // C型开发板引出两路spi,分别连接BMI088/作为扩展IO在8pin牛角座引出
-#define MX_SPI_BUS_SLAVE_CNT 4 // 单个spi总线上挂载的从机数目
+#define MX_SPI_BUS_SLAVE_CNT 8 // 所有spi总线上的从机实例总数上限(BMI088占2个,其余留给磁编等外设),
+                               // 注意是全局上限而非单总线,超过此值SPIRegister会死循环
 
 /* spi transmit recv mode enumerate*/
 typedef enum

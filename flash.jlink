@@ -1,0 +1,6 @@
+r
+h
+loadfile build/basic_framework.elf
+r
+g
+qc

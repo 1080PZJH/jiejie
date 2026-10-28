@@ -23,23 +23,29 @@
  */
 typedef enum
 {
-    OPEN_LOOP = 0b0000,
-    CURRENT_LOOP = 0b0001,
-    SPEED_LOOP = 0b0010,
-    ANGLE_LOOP = 0b0100,
+    OPEN_LOOP = 0b0000,   // 开环控制,不使用任何闭环
+    CURRENT_LOOP = 0b0001, // 仅电流环(最内层,输出力矩/电流)
+    SPEED_LOOP = 0b0010,  // 仅速度环
+    ANGLE_LOOP = 0b0100,  // 仅角度环(最外层)
 
-    // only for checking
-    SPEED_AND_CURRENT_LOOP = 0b0011,
-    ANGLE_AND_SPEED_LOOP = 0b0110,
-    ALL_THREE_LOOP = 0b0111,
+    // 以下仅用于检查/表示串级组合,实际使用时通过或运算组合,如 SPEED_LOOP|CURRENT_LOOP
+    SPEED_AND_CURRENT_LOOP = 0b0011,  // 速度环+电流环(串级)
+    ANGLE_AND_SPEED_LOOP = 0b0110,    // 角度环+速度环(串级)
+    ALL_THREE_LOOP = 0b0111,          // 角度环+速度环+电流环(三环串级)
 } Closeloop_Type_e;
 
+/**
+ * @brief 前馈类型,如果需要多个前馈,则使用或运算
+ *        例如需要速度前馈和电流前馈: SPEED_FEEDFORWARD|CURRENT_FEEDFORWARD
+ *        前馈量通过Motor_Controller_s中的对应指针传入,在对应环的参考值上叠加,
+ *        用于提升响应速度或抵消已知扰动(如重力矩),不经过PID计算
+ */
 typedef enum
 {
-    FEEDFORWARD_NONE = 0b00,
-    CURRENT_FEEDFORWARD = 0b01,
-    SPEED_FEEDFORWARD = 0b10,
-    CURRENT_AND_SPEED_FEEDFORWARD = CURRENT_FEEDFORWARD | SPEED_FEEDFORWARD,
+    FEEDFORWARD_NONE = 0b00,           // 不使用前馈
+    CURRENT_FEEDFORWARD = 0b01,        // 电流(力矩)前馈,叠加在电流环参考上,无电流环时直接作为输出
+    SPEED_FEEDFORWARD = 0b10,          // 速度前馈,叠加在速度环参考上
+    CURRENT_AND_SPEED_FEEDFORWARD = CURRENT_FEEDFORWARD | SPEED_FEEDFORWARD, // 电流+速度前馈(组合值),建议通过或运算组合
 } Feedfoward_Type_e;
 
 /* 反馈来源设定,若设为OTHER_FEED则需要指定数据来源指针,详见Motor_Controller_s*/

@@ -57,7 +57,8 @@
                 "${workspaceFolder}/application/shoot",
                 "${workspaceFolder}/application/gimbal",
                 "${workspaceFolder}/application/cmd",
-                "${workspaceFolder}/application/transmit"
+                "${workspaceFolder}/application/transmit",
+                "${workspaceFolder}/modules/encoder"
             ],
             "defines": [
                 "_DEBUG",

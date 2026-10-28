@@ -5,7 +5,10 @@
 /* 所有的spi instance保存于此,用于callback时判断中断来源*/
 static SPIInstance *spi_instance[SPI_DEVICE_CNT] = {NULL};
 static uint8_t idx = 0;                         // 配合中断以及初始化
-uint8_t SPIDeviceOnGoing[SPI_DEVICE_CNT] = {1}; // 用于判断当前spi是否正在传输,防止多个模块同时使用一个spi总线 (0: 正在传输, 1: 未传输)
+// 用于判断当前spi是否正在传输,防止多个模块同时使用一个spi总线 (0: 正在传输, 1: 未传输)
+// 注意:必须显式把每条总线都初始化为空闲(1),只写{1}会让SPI2对应元素默认为0(即"正在传输"),
+// 于是SPITransRecv在SPI2上第一次调用就会卡死在while(!SPIDeviceOnGoing[1])里
+uint8_t SPIDeviceOnGoing[SPI_DEVICE_CNT] = {1, 1};
 
 SPIInstance *SPIRegister(SPI_Init_Config_s *conf)
 {

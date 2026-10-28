@@ -74,6 +74,7 @@ DMMotorInstance *DMMotorInit(Motor_Init_Config_s *config)
     PIDInit(&motor->angle_PID, &config->controller_param_init_config.angle_PID);
     motor->other_angle_feedback_ptr = config->controller_param_init_config.other_angle_feedback_ptr;
     motor->other_speed_feedback_ptr = config->controller_param_init_config.other_speed_feedback_ptr;
+    motor->speed_feedforward_ptr = config->controller_param_init_config.speed_feedforward_ptr;
 
     config->can_init_config.can_module_callback = DMMotorDecode;
     config->can_init_config.id = motor;
@@ -167,6 +168,46 @@ void DMMotorControl()//在MotorControlTask中同步调用，500Hz
         Motor_Control_Setting_s *setting = &motor->motor_settings;
         float pid_ref = motor->pid_ref;
         float set = pid_ref;
+        float feedback, output;
+
+        // 根据闭环配置计算 PID
+        if (setting->close_loop_type & ANGLE_LOOP)
+        {
+            // 角度环：外环是角度，输出作为速度环的参考
+            if (setting->angle_feedback_source == OTHER_FEED)
+                feedback = *motor->other_angle_feedback_ptr;
+            else
+                feedback = motor->measure.position;
+            
+            output = PIDCalculate(&motor->angle_PID, feedback, pid_ref);
+            
+            // 如果只有角度环，直接输出
+            if (!(setting->close_loop_type & SPEED_LOOP))
+                set = output;
+            else
+                pid_ref = output; // 角度环输出作为速度环参考
+        }
+        
+        if (setting->close_loop_type & SPEED_LOOP)
+        {
+            // 速度环
+            if (setting->speed_feedback_source == OTHER_FEED)
+                feedback = *motor->other_speed_feedback_ptr;
+            else
+                feedback = motor->measure.velocity;
+            
+            output = PIDCalculate(&motor->speed_PID, feedback, pid_ref);
+            set = output;
+        }
+
+        // 如果没有配置任何闭环,直接透传 pid_ref(力控模式)
+        if (!(setting->close_loop_type & (ANGLE_LOOP | SPEED_LOOP)))
+            set = pid_ref;
+
+        // 速度前馈:力矩量纲(如pitch重力补偿K*cos),直接叠加在闭环输出之后,
+        // 而非加到参考值上(速度前馈加参考会导致PID持续追赶产生稳态速度偏差)
+        if ((setting->feedforward_flag & SPEED_FEEDFORWARD) && motor->speed_feedforward_ptr)
+            set += *motor->speed_feedforward_ptr;
 
         if (setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
             set *= -1;
@@ -174,7 +215,7 @@ void DMMotorControl()//在MotorControlTask中同步调用，500Hz
         LIMIT_MIN_MAX(set, DM_T_MIN, DM_T_MAX);
         motor_send_mailbox.position_des = float_to_uint(0, DM_P_MIN, DM_P_MAX, 16);
         motor_send_mailbox.velocity_des = float_to_uint(0, DM_V_MIN, DM_V_MAX, 12);
-        motor_send_mailbox.torque_des = float_to_uint(pid_ref, DM_T_MIN, DM_T_MAX, 12);
+        motor_send_mailbox.torque_des = float_to_uint(set, DM_T_MIN, DM_T_MAX, 12);
         motor_send_mailbox.Kp = 0;
         motor_send_mailbox.Kd = 0;
 
